@@ -1,102 +1,209 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-
-// Initialize the app and configure middleware
 const app = express();
+const port = 5000;
+
+// Middleware to parse JSON request bodies
 app.use(express.json());
-app.use(cors());
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/contactsDB', { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("MongoDB connected"))
-    .catch(err => console.log(err));
+// ContactNode and ContactBST (same classes as the frontend)
+class ContactNode {
+    constructor(phoneNumber, contactName, email, address) {
+        this.phoneNumber = phoneNumber;
+        this.contactName = contactName;
+        this.email = email;
+        this.address = address;
+        this.left = null;
+        this.right = null;
+    }
+}
 
-// Define the Contact schema
-const contactSchema = new mongoose.Schema({
-    phoneNumber: { type: String, required: true, unique: true },
-    contactName: { type: String, required: true },
-    email: { type: String, required: true },
-    address: { type: String, required: true }
-});
+class ContactBST {
+    constructor() {
+        this.root = null;
+    }
 
-// Create the Contact model
-const Contact = mongoose.model('Contact', contactSchema);
+    // Insert a new contact
+    insert(phoneNumber, contactName, email, address) {
+        const newNode = new ContactNode(phoneNumber, contactName, email, address);
+        if (this.root === null) {
+            this.root = newNode;
+        } else {
+            this.root = this.insertNode(this.root, newNode);
+        }
+    }
+
+    insertNode(node, newNode) {
+        if (newNode.phoneNumber < node.phoneNumber) {
+            if (node.left === null) {
+                node.left = newNode;
+            } else {
+                node.left = this.insertNode(node.left, newNode);
+            }
+        } else if (newNode.phoneNumber > node.phoneNumber) {
+            if (node.right === null) {
+                node.right = newNode;
+            } else {
+                node.right = this.insertNode(node.right, newNode);
+            }
+        }
+        return node;
+    }
+
+    // Search for a contact by phone number
+    search(phoneNumber) {
+        return this.searchNode(this.root, phoneNumber);
+    }
+
+    searchNode(node, phoneNumber) {
+        if (node === null) {
+            return null;
+        }
+        if (phoneNumber < node.phoneNumber) {
+            return this.searchNode(node.left, phoneNumber);
+        } else if (phoneNumber > node.phoneNumber) {
+            return this.searchNode(node.right, phoneNumber);
+        } else {
+            return node; // Contact found
+        }
+    }
+
+    // Update an existing contact
+    update(phoneNumber, newContactName, newEmail, newAddress) {
+        const contactNode = this.search(phoneNumber);
+        if (contactNode) {
+            contactNode.contactName = newContactName;
+            contactNode.email = newEmail;
+            contactNode.address = newAddress;
+            return true;
+        }
+        return false;
+    }
+
+    // Delete a contact
+    delete(phoneNumber) {
+        this.root = this.deleteNode(this.root, phoneNumber);
+    }
+
+    deleteNode(node, phoneNumber) {
+        if (node === null) {
+            return null;
+        }
+
+        if (phoneNumber < node.phoneNumber) {
+            node.left = this.deleteNode(node.left, phoneNumber);
+        } else if (phoneNumber > node.phoneNumber) {
+            node.right = this.deleteNode(node.right, phoneNumber);
+        } else {
+            // Node found, now delete it
+            if (node.left === null && node.right === null) {
+                node = null;
+            } else if (node.left === null) {
+                node = node.right;
+            } else if (node.right === null) {
+                node = node.left;
+            } else {
+                const minNode = this.findMinNode(node.right);
+                node.phoneNumber = minNode.phoneNumber;
+                node.contactName = minNode.contactName;
+                node.email = minNode.email;
+                node.address = minNode.address;
+                node.right = this.deleteNode(node.right, minNode.phoneNumber);
+            }
+        }
+        return node;
+    }
+
+    findMinNode(node) {
+        while (node.left !== null) {
+            node = node.left;
+        }
+        return node;
+    }
+
+    // View all contacts (inorder traversal)
+    viewAllContacts() {
+        const contacts = [];
+        this.inOrderTraversal(this.root, contacts);
+        return contacts;
+    }
+
+    inOrderTraversal(node, contacts) {
+        if (node !== null) {
+            this.inOrderTraversal(node.left, contacts);
+            contacts.push({
+                phoneNumber: node.phoneNumber,
+                contactName: node.contactName,
+                email: node.email,
+                address: node.address
+            });
+            this.inOrderTraversal(node.right, contacts);
+        }
+    }
+}
+
+// Initialize contact BST
+const contactBST = new ContactBST();
 
 // Routes
 
 // Add a new contact
-app.post('/addContact', async (req, res) => {
-    try {
-        const { phoneNumber, contactName, email, address } = req.body;
-        const newContact = new Contact({ phoneNumber, contactName, email, address });
-        await newContact.save();
-        res.json({ message: 'Contact added successfully!' });
-    } catch (error) {
-        if (error.code === 11000) { // Duplicate phone number
-            res.status(400).json({ message: 'Phone number already exists.' });
-        } else {
-            res.status(500).json({ message: 'Server error: Unable to add contact.' });
-        }
+app.post('/addContact', (req, res) => {
+    const { phoneNumber, contactName, email, address } = req.body;
+    
+    if (phoneNumber && contactName && email && address) {
+        contactBST.insert(phoneNumber, contactName, email, address);
+        res.json({ message: 'Contact added successfully.' });
+    } else {
+        res.status(400).json({ message: 'Please provide all required fields.' });
     }
 });
 
-// Search for a contact by phone number
-app.get('/searchContact/:phoneNumber', async (req, res) => {
-    try {
-        const contact = await Contact.findOne({ phoneNumber: req.params.phoneNumber });
-        if (contact) {
-            res.json(contact);
-        } else {
-            res.json({ message: 'Contact not found.' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error: Unable to search contact.' });
+// Search for a contact
+app.get('/searchContact/:phoneNumber', (req, res) => {
+    const phoneNumber = req.params.phoneNumber;
+    const contact = contactBST.search(phoneNumber);
+
+    if (contact) {
+        res.json(contact);
+    } else {
+        res.status(404).json({ message: 'Contact not found.' });
     }
 });
 
 // Update an existing contact
-app.put('/updateContact/:phoneNumber', async (req, res) => {
-    try {
-        const { contactName, email, address } = req.body;
-        const updatedContact = await Contact.findOneAndUpdate(
-            { phoneNumber: req.params.phoneNumber },
-            { contactName, email, address },
-            { new: true }
-        );
-        if (updatedContact) {
-            res.json({ message: 'Contact updated successfully!' });
-        } else {
-            res.json({ message: 'Contact not found.' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error: Unable to update contact.' });
+app.put('/updateContact/:phoneNumber', (req, res) => {
+    const phoneNumber = req.params.phoneNumber;
+    const { contactName, email, address } = req.body;
+
+    const isUpdated = contactBST.update(phoneNumber, contactName, email, address);
+
+    if (isUpdated) {
+        res.json({ message: 'Contact updated successfully.' });
+    } else {
+        res.status(404).json({ message: 'Contact not found.' });
     }
 });
 
-// Delete a contact by phone number
-app.delete('/deleteContact/:phoneNumber', async (req, res) => {
-    try {
-        const deletedContact = await Contact.findOneAndDelete({ phoneNumber: req.params.phoneNumber });
-        if (deletedContact) {
-            res.json({ message: 'Contact deleted successfully!' });
-        } else {
-            res.json({ message: 'Contact not found.' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: 'Server error: Unable to delete contact.' });
-    }
+// Delete a contact
+app.delete('/deleteContact/:phoneNumber', (req, res) => {
+    const phoneNumber = req.params.phoneNumber;
+
+    contactBST.delete(phoneNumber);
+    res.json({ message: 'Contact deleted successfully.' });
 });
 
 // View all contacts
-app.get('/viewAllContacts', async (req, res) => {
-    try {
-        const contacts = await Contact.find();
+app.get('/viewAllContacts', (req, res) => {
+    const contacts = contactBST.viewAllContacts();
+
+    if (contacts.length > 0) {
         res.json(contacts);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error: Unable to retrieve contacts.' });
+    } else {
+        res.json({ message: 'No contacts available.' });
     }
 });
-// Start the server
-const PORT = process.env.PORT || 5000; // Change to 3000 as per your output
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Start server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});

@@ -6,24 +6,24 @@
     <title>Contact Management System</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body style="background-image:url(https://static.vecteezy.com/system/resources/previews/017/188/835/original/abstract-blue-gradient-wallpaper-background-with-free-flowing-semi-transparent-silky-smooth-waves-various-shades-of-blue-soft-lighting-element-for-prints-design-vector.jpg);
-background-size:cover;">
+<body style="background-image: url('https://static.vecteezy.com/system/resources/previews/017/188/835/original/abstract-blue-gradient-wallpaper-background-with-free-flowing-semi-transparent-silky-smooth-waves-various-shades-of-blue-soft-lighting-element-for-prints-design-vector.jpg'); background-size: cover;">
 
     <h1>Contact Management System</h1>
+    
     <!-- Add Contact Form -->
     <form id="addContactForm">
         <h2>Add a Contact</h2>
         <label for="phoneNumber">Phone Number:</label>
-        <input  type="text" id="phoneNumber" placeholder="Enter phone number">
+        <input type="text" id="phoneNumber" placeholder="Enter phone number" required>
         
         <label for="contactName">Contact Name:</label>
-        <input type="text" id="contactName" placeholder="Enter contact name">
+        <input type="text" id="contactName" placeholder="Enter contact name" required>
         
         <label for="email">Email:</label>
-        <input type="text" id="email" placeholder="Enter email">
+        <input type="text" id="email" placeholder="Enter email" required>
         
         <label for="address">Address:</label>
-        <input type="text" id="address" placeholder="Enter address">
+        <input type="text" id="address" placeholder="Enter address" required>
         
         <button type="button" onclick="addContact()">Add Contact</button>
     </form>
@@ -32,7 +32,7 @@ background-size:cover;">
     <form id="searchContactForm">
         <h2>Search a Contact</h2>
         <label for="searchPhoneNumber">Phone Number:</label>
-        <input type="text" id="searchPhoneNumber" placeholder="Enter phone number to search">
+        <input type="text" id="searchPhoneNumber" placeholder="Enter phone number to search" required>
         
         <button type="button" onclick="searchContact()">Search Contact</button>
     </form>
@@ -41,16 +41,16 @@ background-size:cover;">
     <form id="updateContactForm">
         <h2>Update a Contact</h2>
         <label for="updatePhoneNumber">Phone Number:</label>
-        <input type="text" id="updatePhoneNumber" placeholder="Enter phone number to update">
+        <input type="text" id="updatePhoneNumber" placeholder="Enter phone number to update" required>
         
         <label for="newContactName">New Contact Name:</label>
-        <input type="text" id="newContactName" placeholder="Enter new contact name">
+        <input type="text" id="newContactName" placeholder="Enter new contact name" required>
         
         <label for="newEmail">New Email:</label>
-        <input type="text" id="newEmail" placeholder="Enter new email">
+        <input type="text" id="newEmail" placeholder="Enter new email" required>
         
         <label for="newAddress">New Address:</label>
-        <input type="text" id="newAddress" placeholder="Enter new address">
+        <input type="text" id="newAddress" placeholder="Enter new address" required>
         
         <button type="button" onclick="updateContact()">Update Contact</button>
     </form>
@@ -59,7 +59,7 @@ background-size:cover;">
     <form id="deleteContactForm">
         <h2>Delete a Contact</h2>
         <label for="deletePhoneNumber">Phone Number:</label>
-        <input type="text" id="deletePhoneNumber" placeholder="Enter phone number to delete">
+        <input type="text" id="deletePhoneNumber" placeholder="Enter phone number to delete" required>
         
         <button type="button" onclick="deleteContact()">Delete Contact</button>
     </form>
@@ -68,8 +68,10 @@ background-size:cover;">
     <h2>View All Contacts</h2>
     <button type="button" onclick="viewAllContacts()">View All Contacts</button>
 
+    <!-- Result Section -->
     <div id="result"></div>
 
     <script src="script.js"></script>
 </body>
 </html>
+
